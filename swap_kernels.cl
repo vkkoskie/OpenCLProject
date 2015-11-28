@@ -53,8 +53,8 @@ __kernel void even_horizontal(__read_only image2d_t source,
 	int row = (2 * gid) / width;
 	int col = (2 * gid) % width;
 
-	int2 a = (int2) (row, col);
-	int2 b = (int2) (row, col + 1);// Assumes even width
+	int2 a = (int2) (col, row);
+	int2 b = (int2) (col + 1, row);// Assumes even width
 
 	conditional_swap(source, palette, destination, sampler, a, b);
 }
@@ -70,8 +70,8 @@ __kernel void odd_horizontal(__read_only image2d_t source,
 	int row = (2 * gid) / width;
 	int col = (2 * gid) % width;
 
-	int2 a = (int2) (row, col + 1); // Assumes even width
-	int2 b = (int2) (row, (col + 2) % width); // Wrap around to col 0
+	int2 a = (int2) (col + 1, row); // Assumes even width
+	int2 b = (int2) ((col + 2) % width, row); // Wrap around to col 0
 
 	conditional_swap(source, palette, destination, sampler, a, b);
 }
@@ -87,8 +87,8 @@ __kernel void even_vertical(__read_only image2d_t source,
 	int row = 2 * (gid / width);
 	int col = gid % width;
 
-	int2 a = (int2) (row, col);
-	int2 b = (int2) (row + 1, col);// Assumes even height
+	int2 a = (int2) (col, row);
+	int2 b = (int2) (col, row + 1);// Assumes even height
 
 	conditional_swap(source, palette, destination, sampler, a, b);
 }
@@ -104,8 +104,8 @@ __kernel void odd_vertical(__read_only image2d_t source,
 	int row = 2 * (gid / width);
 	int col = gid % width;
 
-	int2 a = (int2) (row + 1, col); // Assumes even height
-	int2 b = (int2) ((row + 2) % height, col); // Wrap around to row 0
+	int2 a = (int2) (col, row + 1); // Assumes even height
+	int2 b = (int2) (col, (row + 2) % height); // Wrap around to row 0
 
 	conditional_swap(source, palette, destination, sampler, a, b);
 }

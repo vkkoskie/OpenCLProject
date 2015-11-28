@@ -55,8 +55,8 @@ int even_horizontal(__read_only image2d_t source,
 	int row = (2 * gid) / width;
 	int col = (2 * gid) % width;
 
-	int2 a = (int2) (row, col);
-	int2 b = (int2) (row, col + 1);// Assumes even width
+	int2 a = (int2) (col, row);
+	int2 b = (int2) (col + 1, row);// Assumes even width
 
 	return conditional_swap(source, sampler, a, b, width, buffer);
 }
@@ -71,8 +71,8 @@ int odd_horizontal(__read_only image2d_t source,
 	int row = (2 * gid) / width;
 	int col = (2 * gid) % width;
 
-	int2 a = (int2) (row, col + 1); // Assumes even width
-	int2 b = (int2) (row, (col + 2) % width); // Wrap around to col 0
+	int2 a = (int2) (col + 1, row); // Assumes even width
+	int2 b = (int2) ((col + 2) % width, row); // Wrap around to col 0
 
 	return conditional_swap(source, sampler, a, b, width, buffer);
 }
@@ -87,8 +87,8 @@ int even_vertical(__read_only image2d_t source,
 	int row = 2 * (gid / width);
 	int col = gid % width;
 
-	int2 a = (int2) (row, col);
-	int2 b = (int2) (row + 1, col);// Assumes even height
+	int2 a = (int2) (col, row);
+	int2 b = (int2) (col, row + 1);// Assumes even height
 
 	return conditional_swap(source, sampler, a, b, width, buffer);
 }
@@ -103,8 +103,8 @@ int odd_vertical(__read_only image2d_t source,
 	int row = 2 * (gid / width);
 	int col = gid % width;
 
-	int2 a = (int2) (row + 1, col); // Assumes even height
-	int2 b = (int2) ((row + 2) % height, col); // Wrap around to row 0
+	int2 a = (int2) (col, row + 1); // Assumes even height
+	int2 b = (int2) (col, (row + 2) % height); // Wrap around to row 0
 
 	return conditional_swap(source, sampler, a, b, width, buffer);
 }
@@ -123,38 +123,38 @@ __kernel void quad_swap(__read_only image2d_t source,
 	int row = (2*gid) / width;
 	int col = (2*gid) % width;
 
-	buffer[2*gid]   = read_imageui(palette, sampler, (int2)(row,col));
-	buffer[2*gid+1] = read_imageui(palette, sampler, (int2)(row,col+1));
+	buffer[2*gid]   = read_imageui(palette, sampler, (int2)(col, row));
+	buffer[2*gid+1] = read_imageui(palette, sampler, (int2)(col+1, row));
 
 	int swaps = 0;
 
 	for (int i = 0; i < 1000; i++) {
-		//write_imageui(destination, (int2)(row,col), buffer[2*gid]);
-		//write_imageui(destination, (int2)(row,col+1), buffer[2*gid+1]);
+		//write_imageui(destination, (int2)(col, row), buffer[2*gid]);
+		//write_imageui(destination, (int2)(col+1, row), buffer[2*gid+1]);
 
 		swaps = even_horizontal(source, sampler, buffer, width, height, gid);
 		barrier(CLK_GLOBAL_MEM_FENCE);
 
-		//write_imageui(destination, (int2)(row,col), buffer[2*gid]);
-		//write_imageui(destination, (int2)(row,col+1), buffer[2*gid+1]);
+		//write_imageui(destination, (int2)(col, row), buffer[2*gid]);
+		//write_imageui(destination, (int2)(col+1, row), buffer[2*gid+1]);
 
 		swaps += even_vertical(source, sampler, buffer, width, height, gid);
 		barrier(CLK_GLOBAL_MEM_FENCE);
 
-		//write_imageui(destination, (int2)(row,col), buffer[2*gid]);
-		//write_imageui(destination, (int2)(row,col+1), buffer[2*gid+1]);
+		//write_imageui(destination, (int2)(col, row), buffer[2*gid]);
+		//write_imageui(destination, (int2)(col+1, row), buffer[2*gid+1]);
 
 		swaps += odd_horizontal(source, sampler, buffer, width, height, gid);
 		barrier(CLK_GLOBAL_MEM_FENCE);
 
-		//write_imageui(destination, (int2)(row,col), buffer[2*gid]);
-		//write_imageui(destination, (int2)(row,col+1), buffer[2*gid+1]);
+		//write_imageui(destination, (int2)(col, row), buffer[2*gid]);
+		//write_imageui(destination, (int2)(col+1, row), buffer[2*gid+1]);
 
 		swaps += odd_vertical(source, sampler, buffer, width, height, gid);
 		barrier(CLK_GLOBAL_MEM_FENCE);
 
 	}
 
-	write_imageui(destination, (int2)(row,col), buffer[2*gid]);
-	write_imageui(destination, (int2)(row,col+1), buffer[2*gid+1]);
+	write_imageui(destination, (int2)(col, row), buffer[2*gid]);
+	write_imageui(destination, (int2)(col+1, row), buffer[2*gid+1]);
 }
