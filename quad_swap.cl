@@ -6,14 +6,23 @@ float dist(uint4 x, uint4 y) {
         float t = 0;
         float lx = 0;
         float ly = 0;
-	for (int i = 0; i < 3; ++i) {
-		float xi = x[i] * F[i];
-		float yi = y[i] * F[i];
-        	float d = xi - yi;
-        	t += d * d;
-        	lx += xi;
-        	ly += yi;
-	}
+
+	float xi[3];
+	float yi[3];
+	xi[0] = x.x * F[0];
+	xi[1] = x.y * F[1];
+	xi[2] = x.z * F[2];
+	yi[0] = y.x * F[0];
+	yi[1] = y.y * F[1];
+	yi[2] = y.z * F[2];
+	lx = xi[0] + xi[1] + xi[2];
+	ly = yi[0] + yi[1] + yi[2];
+	xi[0] -= yi[0];
+	xi[1] -= yi[1];
+	xi[2] -= yi[2];
+	t = (xi[0] * xi[0]) +
+	    (xi[1] * xi[1]) +
+	    (xi[2] * xi[2]);
 	float l = lx - ly;
 	return t + l * l * LUM_WEIGHT;
 }
