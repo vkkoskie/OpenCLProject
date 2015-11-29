@@ -1,3 +1,11 @@
+/**
+ * Calculate pixel color distance.
+ *
+ * @param x a vector with RGB values in .x, .y, and .z
+ * @param y a vector with RGB values in .x, .y, and .z
+ *
+ * @returns The color distance between x and y;
+ */
 float dist(uint4 x, uint4 y) {
 
 	float LUM_WEIGHT = 10;
@@ -27,6 +35,18 @@ float dist(uint4 x, uint4 y) {
 	return t + l * l * LUM_WEIGHT;
 }
 
+/**
+ * Swap two pixels if swapping them would lower the total distance between
+ * pixels in @a source and the corresponding pixels in @a buffer.
+ *
+ * @param source  The source image.
+ * @param sampler A sampler for @a source.
+ * @param loc_a   The coordinates (column, row) of the first pixel.
+ * @param loc_b   The coordinates (column, row) of the second pixel.
+ * @param width   The width in pixels of @a source.
+ * @param buffer  The workspace where pixels at @a loc_a and @a loc_b may
+ *                be swapped.
+ */
 int conditional_swap(__read_only image2d_t source,
                      sampler_t sampler,
                      int2 loc_a,
@@ -54,6 +74,24 @@ int conditional_swap(__read_only image2d_t source,
 	return did_swap;
 }
 
+/**
+ * Do a conditional, horizontal swap with pixels on an "even" cut.
+ *
+ * @param source  The source image.
+ * @param sampler A sampler for @a source.
+ * @param buffer  The workspace in which to swap pixels.
+ * @param width   The width of @a source.
+ * @param height  The height of @a source.
+ * @param gid     The global ID inherited from the kernel.
+ *
+ * An "even" cut means that the pixels will be swapped in pairs starting at
+ * index 0. That is, for a 4x4 image, a horizontal swap of all pixels would be:
+ *
+ * a b c d   ->   b a d c
+ * e f g h   ->   f e h g
+ * i j k l   ->   j i l k
+ * m n o p   ->   n m p o
+ */
 int even_horizontal(__read_only image2d_t source,
                     sampler_t sampler,
                     uint4 *buffer,
@@ -70,6 +108,25 @@ int even_horizontal(__read_only image2d_t source,
 	return conditional_swap(source, sampler, a, b, width, buffer);
 }
 
+/**
+ * Do a conditional, horizontal swap with pixels on an "odd" cut.
+ *
+ * @param source  The source image.
+ * @param sampler A sampler for @a source.
+ * @param buffer  The workspace in which to swap pixels.
+ * @param width   The width of @a source.
+ * @param height  The height of @a source.
+ * @param gid     The global ID inherited from the kernel.
+ *
+ * An "odd" cut means that the pixels will be swapped in pairs starting at
+ * index 1 with wrap around to 0 when pairing the final pixel in each row.
+ * That is, for a 4x4 image, a horizontal swap of all pixels would be:
+ *
+ * a b c d   ->   d c b a
+ * e f g h   ->   h g f e
+ * i j k l   ->   l k j i
+ * m n o p   ->   p o n m
+ */
 int odd_horizontal(__read_only image2d_t source,
                     sampler_t sampler,
                     uint4 *buffer,
@@ -86,6 +143,24 @@ int odd_horizontal(__read_only image2d_t source,
 	return conditional_swap(source, sampler, a, b, width, buffer);
 }
 
+/**
+ * Do a conditional, vertical swap with pixels on an "even" cut.
+ *
+ * @param source  The source image.
+ * @param sampler A sampler for @a source.
+ * @param buffer  The workspace in which to swap pixels.
+ * @param width   The width of @a source.
+ * @param height  The height of @a source.
+ * @param gid     The global ID inherited from the kernel.
+ *
+ * An "even" cut means that the pixels will be swapped in pairs starting at
+ * index 0. That is, for a 4x4 image, a vertical swap of all pixels would be:
+ *
+ * a b c d   ->   e f g h
+ * e f g h   ->   a b c d
+ * i j k l   ->   m n o p
+ * m n o p   ->   i j k l
+ */
 int even_vertical(__read_only image2d_t source,
                   sampler_t sampler,
                   uint4 *buffer,
@@ -102,6 +177,25 @@ int even_vertical(__read_only image2d_t source,
 	return conditional_swap(source, sampler, a, b, width, buffer);
 }
 
+/**
+ * Do a conditional, vertical swap with pixels on an "odd" cut.
+ *
+ * @param source  The source image.
+ * @param sampler A sampler for @a source.
+ * @param buffer  The workspace in which to swap pixels.
+ * @param width   The width of @a source.
+ * @param height  The height of @a source.
+ * @param gid     The global ID inherited from the kernel.
+ *
+ * An "odd" cut means that the pixels will be swapped in pairs starting at
+ * index 1 with wrap around to 0 when pairing the final pixel in each column.
+ * That is, for a 4x4 image, a vertical swap of all pixels would be:
+ *
+ * a b c d   ->   m n o p
+ * e f g h   ->   i j k l
+ * i j k l   ->   e f g h
+ * m n o p   ->   a b c d
+ */
 int odd_vertical(__read_only image2d_t source,
                  sampler_t sampler,
                  uint4 *buffer,
@@ -118,6 +212,18 @@ int odd_vertical(__read_only image2d_t source,
 	return conditional_swap(source, sampler, a, b, width, buffer);
 }
 
+/**
+ * Iteratively swap pixels from a palette to approximate the source image.
+ *
+ * @param source      The source image.
+ * @param palette     The palette image.
+ * @param buffer      A workspace to place intermediate results.
+ * @param destination A write-only image to place final (or current) state
+ *                    of @a buffer.
+ * @param sampler     A sampler for all three image arguments.
+ * @param width       The width of @a source.
+ * @param height      The height of @a source.
+ */
 __kernel void quad_swap(__read_only image2d_t source,
                         __read_only image2d_t palette,
                         uint4 *buffer,
